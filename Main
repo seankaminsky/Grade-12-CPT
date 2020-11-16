@@ -1,0 +1,735 @@
+*ICS4U1 CPT 
+*Sean Kaminsky, Zain Bharwani, Michael Pellicano, Connor Durocher, Edwin Or
+*Nov 08 2020
+*Casino Game
+*/
+
+import java.util.*; //imports most functions
+import java.util.concurrent.TimeUnit; //allows us to use TimeUnit.SECONDS.Sleep(2)
+
+class Main {
+
+  private static InputManager Input = new InputManager(0,0,null); //Allows InputManager to be used to read information from user
+  static SpinAnimation spin = new SpinAnimation(); //Allows SpinAnimation to be used to display animations
+  static TextEffects colours = new TextEffects(); //Allows TextEffects to be used to change text colour and font
+  static Scanner in = new Scanner(System.in);
+
+  static ArrayList<Player> allPlayers = new  ArrayList<Player>(); //ArrayList to track Player Objects for having multiplhje accounts. Known as the "saved accounts"
+  static Player currentPlayer = null; //Player object that is currently active. Can be swapped by talking to the greeter. Known as the "active account"
+
+  public static void main(String[] args) {
+    colours.assignColours(); //Please make sure this runs everytime the program starts, assigns colours to the 2D array in TextEffects
+
+    //Print Entry Message
+    System.out.println(TextEffects.colours[212][5] + "\nWelcome to the" + TextEffects.RESET);
+    Asci.casinoText();
+
+    int userChoice = 0; //int decleration
+      
+    do { //loop to keep running until user chooses to stop
+
+      userChoice = options(); //Lets user choose who they want to talk to
+
+      switch (userChoice) { //calls different method based on what userChoice is
+
+        case 1: 
+            
+          talkToGreeter(); //has user talk to the greeter
+          break;
+
+        case 2:
+
+          talkToCashier(); //has user talk to the cashier
+          break;
+
+        case 3: 
+          
+          talkToStatistician(); //has user talk to the statistician
+          break;
+
+        case 4:
+
+          playGames(); //has user talk to the croupier (to play games)
+          break;
+
+      }
+
+    } while (userChoice != -1); //ends loop if user chose to shut down casino
+
+    //Print Exit Message
+    System.out.println("");
+    System.out.print(Staff.manager());
+    System.out.println("The casino is now shut down. All player accounts have been deleted. All chips are now void, and cannot be exchanged for money.");
+
+    System.exit(0); //makes sure program ends here, just to be safe
+     
+  } 
+
+
+  /**
+  * Lets player choose what they would like to do.
+  * pre: none
+  * post: userChoice is returned, to tell the main method what method to run.
+  */
+  public static int options() {
+
+    int userChoice = 0; //int decleration
+
+    do { //loop to insure user picks one of the choices
+
+      //print users options
+      System.out.println(TextEffects.colours[14][5] + "\nWhat do you want to do?" + TextEffects.RESET);
+      if (currentPlayer == null) { //highlights greeter if the program thinks the user should talk to the greeter (do not have an active account)
+        System.out.println(TextEffects.colours[212][4] + "1 - Talk to Greeter" + TextEffects.RESET);
+        System.out.println("2 - Talk to Cashier");
+      } else if (currentPlayer.getBalance() == 0) { //highlights cashier if the program thinks the user should talk to the cashier (out of chips)
+        System.out.println("1 - Talk to Greeter");
+        System.out.println(TextEffects.colours[212][4] + "2 - Talk to Cashier" + TextEffects.RESET);
+      } else {
+        System.out.println("1 - Talk to Greeter");
+        System.out.println("2 - Talk to Cashier");
+      }
+      System.out.println("3 - Talk to Statistician");
+      System.out.println("4 - Play a Game");
+      System.out.println("5 - Shut Down Casino");
+
+      //take in value from user with improved scanner made by Michael
+      Input = Input.getInt("");
+      userChoice = Input.intInput;
+
+
+      switch (userChoice) { //returns different int to main method based on what user chooses
+
+        case 1:
+
+          return 1; //returns 1 if user wants to talk to greeter
+
+        case 2:
+
+          if (currentPlayer == null) { //if there is no active account
+
+            //tells player to talk to greeter and make an account, then loops to allow them to choose this
+            System.out.print(Staff.cashier());
+            System.out.println("You should go talk to the Greeter to make an account.");
+
+          } else { 
+
+            return 2; //returns 2 if user wants to talk to cashier
+
+          }
+          break;
+
+        case 3:
+
+          if (currentPlayer == null) { //if there is no active account
+
+            //tells player to talk to greeter and make an account, then loops to allow them to choose this
+            System.out.print(Staff.statistician());
+            System.out.println("You should go talk to the Greeter to make an account.");
+
+          } else {
+
+            return 3; //returns 3 if user wants to talk to statistician
+
+          }
+
+          break;
+
+        case 4:
+
+          if (currentPlayer == null) { //if there is no active account
+
+            //tells player to talk to greeter and make an account, then loops to allow them to choose this
+            System.out.print(Staff.croupier());
+            System.out.println("You should go talk to the Greeter to make an account.");
+
+          } else if (currentPlayer.getBalance() == 0) { //if user is out of chips
+
+            //tells player to talk to cashier to buy more chips, then loops to allow them to choose this
+            System.out.print(Staff.croupier());
+            System.out.println("You should go talk to the Cashier to buy some chips.");
+
+          } else {
+    
+            return 4; //returns 4 if user wants to play games
+
+          }
+
+          break;
+
+        case 5:
+
+          int confirmation = 0; 
+
+          do { //loop to allow user to change mind, as shutting down the casino is a big deal
+
+            //get confirmation user wishes to shut down casino
+            Input = Input.getInt("\n" + Staff.manager() + "Are you sure you want to shut down the casino? All accounts will be deleted.\n1 - Yes \t 2 - No\n");
+            confirmation = Input.intInput;
+
+            switch (confirmation) {
+
+              case 1:
+
+                return -1; //returns -1 if user wants to shut down casino (end Program)
+
+              case 2:
+
+                //prints message to tell them the casino will not be shut down if they changed their mind
+                System.out.print(Staff.manager());
+                System.out.println("Very well. The casino shall stay up and running for now.");
+                break;
+
+              default:
+
+                System.out.println("That wasn't one of the options"); //message if user did not enter one of the given options (1 or 2)
+
+            }
+
+          } while ((confirmation != 1) && (confirmation != 2)); //loops if user did not enter one of the given options (1 or 2)
+
+          break;
+
+        default:
+
+          System.out.println("That wasn't one of the options"); //message if user did not enter one of the given options (1 - 5)
+
+      }
+
+    } while (userChoice != 1); //if user did not enter one of the numbers wanted, loops them back to try again. Once a desired number is entered it will have a return statment, which will end the method
+
+    return 0; //return statment since compiler requires one. Program should never get to this line.
+
+  }
+
+
+  /** 
+  * Lets player talk to greeter.
+  * pre: none
+  * post: Greeter preforms different actions based on users cashierChoice*/
+  public static void talkToGreeter() {
+
+    if (currentPlayer != null) {
+      saveAccount(); //if there is an active account, saves it as it may be changed/deleted by greeter
+    }
+  
+    int greeterChoice = -1; //int decleration
+
+    if (currentPlayer == null) { //if there is no active account
+
+      //prints generic welcome message
+      System.out.println("");
+      System.out.print(Staff.greeter());
+      System.out.println("Welcome to the casino.");
+
+      swapAccount(); //has user create account, or log into existing account
+
+    } 
+
+    System.out.println("");
+    System.out.print(Staff.cashier());
+    System.out.println("Hello there " + currentPlayer.getName());
+
+    do {
+
+      //print options for user
+      System.out.println("");
+      System.out.println(Staff.greeter());
+      System.out.println(TextEffects.colours[14][5] + "What would you like to do?" + TextEffects.RESET);
+      System.out.println("1 - Change Account");
+      System.out.println("2 - Change Username");
+      System.out.println("3 - Delete Account");
+      System.out.println(TextEffects.colours[212][4] + "0 - Leave Greeter" + TextEffects.RESET);
+
+      //get users choice using Michaels improved scanner
+      Input = Input.getInt("");
+      greeterChoice = Input.intInput;
+
+      switch (greeterChoice) {
+
+        case 1:
+
+          swapAccount(); //swaps currentPlayer to eiter a new account, or an account in the allPlayers ArrayList
+          break;
+
+        case 2:
+
+          String newName; 
+
+          do { //loop to make sure user enters a valid username
+
+            //take in username from user
+            Input = Input.getString("\n" + Staff.greeter() + "What do you want to change your username to? ");
+            newName = Input.stringInput;
+
+          } while (usernameVerification(newName) == false); //loops if users username is invalid, continues if valid
+
+          allPlayers.remove(currentPlayer); //remove currentPlayers account from saved accounts
+          currentPlayer.setName(newName); //cha nge currentPlayers username
+          allPlayers.add(currentPlayer); //add currentPlayers account to saved accounts
+
+          break;
+
+        case 3:
+
+          int deleteConfirmation = 0;
+
+          if (currentPlayer.getBalance() > 0) { //gets confirmation that player wants to delete account if they have chips
+            
+            do {
+
+              //get confirmation
+              Input = Input.getInt("\n" + Staff.greeter() + "Are you sure you want to delete your account " + currentPlayer.getName() + "? You still have chips, and can cash out\n1 - Yes\t2 - No");
+              deleteConfirmation = Input.intInput;
+
+              if ((deleteConfirmation != 1) && (deleteConfirmation != 2)) {
+
+                System.out.println("That wasn't an option."); //force user to pick an option (1 or 2)
+
+              }
+
+            } while ((deleteConfirmation != 1) && (deleteConfirmation != 2)); //loop until user chooses 1 or 2
+    
+          } else {
+
+            deleteConfirmation = 1; //if user does not have any chips it will delete account
+
+          }
+
+          switch (deleteConfirmation) {
+
+            case 1:
+
+              //print deletion message
+              System.out.print(Staff.greeter());
+              System.out.println(currentPlayer.getName() + "'s account has been permenently deleted.");
+
+              allPlayers.remove(currentPlayer); //Delete account from saved account
+              currentPlayer = null; //Remove account from current account
+              swapAccount(); //Makes user create a new account, or log into an existing one since they now are not in an account
+              break;
+
+            case 2:
+
+              //print message if user did not want to delete their account.
+              System.out.print(Staff.greeter());
+              System.out.println("Very well. Come back if you change your mind and want to delete your account " + currentPlayer.getName());
+              break;        
+
+          }
+          
+
+        case 0:
+
+      }
+    
+    } while (greeterChoice != 0); //loops until user decides to leave the greeter
+
+  }
+  
+
+  /**
+  * Lets player create a new active account, or set active account to a saved account
+  * pre: none
+  * post: currentPlayer is now either a new account, or a saved account from allPlayers
+  */
+  public static void swapAccount() {
+
+    int newOrExist = 0;
+    String newName;
+
+    if (allPlayers.size() == 0) {
+
+      newOrExist = 1; //if there are no saved accounts, has user go straight to creating a new account
+
+    } else { //if there are saved accounts
+
+      do {
+
+        //asks user if they want to create an account or login to an account
+        Input = Input.getInt("\n" + Staff.greeter() + "Would you like to create a new account or log into an existing account?\n1 - New \t 2 - Existing\n");
+        newOrExist = Input.intInput;
+
+        if ((newOrExist != 1) && (newOrExist != 2)) {
+
+          System.out.println("That wasn't one of the options"); //if they did not enter one of the options
+
+        }
+    
+      } while ((newOrExist != 1) && (newOrExist != 2)); //loops until they choose one of the options
+
+    }
+
+    switch (newOrExist) {
+
+      case 1: //user creates new account
+
+        do { 
+
+          //gets the new username
+          Input = Input.getString("\n" + Staff.greeter() + " What do you want the username of your new account to be? ");
+          newName = Input.stringInput;
+
+        } while (usernameVerification(newName) == false); //loops until a valid username is entered
+
+        currentPlayer = new Player(newName); //creates account and sets it as active
+        allPlayers.add(currentPlayer); //saves account to the saved accounts
+
+        break;
+
+      case 2: //user logs into account
+
+        boolean accountChangeFlag = true; //flag to stop loop
+
+        do { //loop to allow user to keep entering usernams
+
+          //get username of account they want to log into
+          Input = Input.getString("\n" + Staff.greeter() + " What is the username of the account you are logging into? If you wish to go back, enter 'Go Back' ");
+          newName = Input.stringInput;
+
+          if (newName.equals("Go Back") == true) { //if they want to go back to create a new account
+
+            swapAccount(); //method calls itself to let user choose to create a new account
+            accountChangeFlag = false; //flag to break loop so after user creates an account this method will also end
+
+          } else {
+
+            for (int i = 0; i < allPlayers.size(); i++) { //check every saved account
+
+              if (allPlayers.get(i).getName().equals(newName) == true) { //check if there is an account with the username entered
+
+                currentPlayer = allPlayers.get(i); //if there is an account with the username entered, sets it as active
+                accountChangeFlag = false; //flag to break loop now that there is an active account
+
+              }
+
+            }
+
+          }
+
+        } while (accountChangeFlag == true); //keep looping until flagged
+
+        break;
+
+    }
+
+  }
+
+
+  /**
+  * Checks if entered string is a valid username (no space, not an existing username)
+  * pre: none
+  * post: returns true if username is valid, and false if it is invalid. Prints reason username is invalid.
+  */
+  public static boolean usernameVerification(String newName) {
+
+    boolean usernameValid = true;
+
+    newName = newName.toLowerCase(); //username is all lowercase
+
+    if (newName.contains(" ") == true) { //if username has a space in it
+
+      usernameValid = false; //usrname is invalid
+
+      //tells user they cannot have a space
+      System.out.print(Staff.greeter());
+      System.out.println("I'm sorry, your username may not contain a space.");
+
+    } else {
+
+      for (int i = 0; i < allPlayers.size(); i++) { //checks all saved accounts
+
+        if (allPlayers.get(i).getName().equals(newName) == true) { //if there is an account with that username
+
+          usernameValid = false; //username is invalid
+
+          //tells user there is already an account with that user name
+          System.out.print(Staff.greeter());
+          System.out.println("Sorry, there is already an account with the username " + newName);
+
+        }
+
+      }    
+
+    }
+
+    return (usernameValid); //returns true if username is valid, false if invalid
+
+  }
+
+
+  /**
+  * Saves active account to saved account
+  * pre: none
+  * post: active account is saved
+  */
+  public static void saveAccount() { //saves active account to saved accounts
+
+    if (currentPlayer != null) { //if there is an active account
+
+      for (int i = 0; i < allPlayers.size(); i++) { //checks all saved accounts
+
+        if (allPlayers.get(i).getName().equals(currentPlayer.getName()) == true) { //finds saved account with same username
+
+          allPlayers.set(i, currentPlayer); //replaces saved account with same user, in order to update it
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+
+  /**
+  * Lets the plyer talk to the cashier
+  * pre: none
+  * post: Cashier preforms different actions based on users choice
+  */
+  public static void talkToCashier() {
+
+    int cashierChoice = -1;
+
+    //prints personalized greeting
+    System.out.println("");
+    System.out.print(Staff.cashier());
+    System.out.println("Hello there " + currentPlayer.getName());
+
+    do { //loop to insure user chooses one of the options
+
+      //print options
+      System.out.println("");
+      System.out.println(Staff.cashier());
+      System.out.println(TextEffects.colours[14][5] + "What would you like to do?" + TextEffects.RESET);
+      if (currentPlayer.getBalance() == 0) { //if the player has no chips highlight Buy Chips
+        System.out.println(TextEffects.colours[212][4] + "1 - Buy Chips" + TextEffects.RESET);
+      } else {
+        System.out.println("1 - Buy Chips");
+      }
+      System.out.println("2 - Check Balance");
+      System.out.println("3 - See Chips");
+      System.out.println("4 - Check Amount Won/Lost");
+      System.out.println("5 - Cash Out");
+      if (currentPlayer.getBalance() == 0) {
+        System.out.println("0 - Leave Cashier");
+      } else { //if the user has chips, highlight Leave Cashier
+        System.out.println(TextEffects.colours[212][4] + "0 - Leave Cashier"+ TextEffects.RESET);
+      }
+
+      //take in users choice
+      Input = Input.getInt("");
+      cashierChoice = Input.intInput;
+
+      switch (cashierChoice) {
+
+        case 1:
+
+          currentPlayer.buyChips(); //has user buy chips
+          break;
+      
+        case 2:
+      
+          currentPlayer.displayInfo(8); //shows user their balance
+          break;
+      
+        case 3:
+      
+          currentPlayer.displayInfo(7); //shows user their chips
+          break;
+              
+        case 4:
+      
+          currentPlayer.displayInfo(9); //shows user how much they have won/lost to the casino
+          break;
+
+        case 5:
+
+          currentPlayer.cashOut(); //lets user cash out of the casino
+          break;
+      
+        case 0:
+      
+          //Cashier says goodbye
+          System.out.println("");
+          System.out.print(Staff.cashier());
+          System.out.println("Very well. Come back if you change your mind " + currentPlayer.getName() + "!");
+          break;
+      
+        default:
+    
+          System.out.println("That was not one of the options."); //tell user they did not enter a valid option
+    
+      }
+
+    } while (cashierChoice != 0); //loop until user leaves cashier
+
+  }
+
+  /**
+  * Lets the player talk to the Statistician
+  * pre: none
+  * post: Statistician preforms different actions based on users choice
+  */
+  public static void talkToStatistician() {
+
+    int statisticianChoice = -1;
+
+    //personalized greeting
+    System.out.println("");
+    System.out.print(Staff.statistician());
+    System.out.println("Hello there " + currentPlayer.getName());
+
+    do { //loop to insure user chooses one of the options
+
+      //print options
+      System.out.println("");
+      System.out.println(Staff.statistician());
+      System.out.println(TextEffects.colours[14][5] + "What would you see stats on?" + TextEffects.RESET);
+      System.out.println("1 - Total Games");
+      System.out.println("2 - BlackJack");
+      System.out.println("3 - Poker");
+      System.out.println("4 - Roulette");
+      System.out.println("5 - Slots");
+      System.out.println(TextEffects.colours[212][4] + "0 - Leave Statistician" + TextEffects.RESET);
+
+      //take in users choice
+      Input = Input.getInt("");
+      statisticianChoice = Input.intInput;
+
+      switch (statisticianChoice) {
+
+        case 1:
+
+          currentPlayer.displayStats(1); //shows total stats
+          break;
+
+        case 2:
+
+          currentPlayer.displayStats(2); //shows blackjack stats
+          break;
+
+        case 3:
+
+          currentPlayer.displayStats(3); //shows poker stats
+          break;
+
+        case 4:
+
+          currentPlayer.displayStats(4); //shows roulette stats
+          break;
+
+        case 5:
+
+          currentPlayer.displayStats(5); //shows slots stats
+          break;
+
+        case 0:
+
+          //statistician says goodbye
+          System.out.println("");
+          System.out.print(Staff.statistician());
+          System.out.println("Very well. Come back if you change your mind " + currentPlayer.getName());
+          break;
+
+        default:
+
+          System.out.println("That was not one of the options."); //tell user they did not enter a valid option
+
+      }
+
+    } while (statisticianChoice != 0); //loop until user leaves statistician
+
+  }
+
+  /**
+  * Lets the player play a game of choice.
+  * pre: none
+  * post: player plays game(s) of choice
+  */
+  public static void playGames() {
+
+    int gameChoice = -1;
+  
+      //personalized greeting
+      System.out.println("");
+      System.out.print(Staff.croupier());
+      System.out.println("Hello there " + currentPlayer.getName());
+  
+    do { //loop to insure user chooses one of the options
+
+      //print options
+      System.out.println("");
+      System.out.println(Staff.croupier());
+      System.out.println(TextEffects.colours[14][5] + "What game would you like to play?" + TextEffects.RESET);
+      System.out.println("1 - BlackJack");
+      System.out.println("2 - Poker");
+      System.out.println("3 - Roulette");
+      System.out.println("4 - Slots");
+      System.out.println(TextEffects.colours[212][4] + "0 - Leave Games Area"+ TextEffects.RESET);
+
+      //take in users choice
+      Input = Input.getInt("");
+      gameChoice = Input.intInput;
+
+      switch (gameChoice) {
+
+        case 1:
+
+          //play plackjack
+          BlackJack playBlackJack = new BlackJack(currentPlayer); 
+          playBlackJack.menu();
+          currentPlayer = playBlackJack.getPlayerBlackJack();
+          break;
+
+        case 2:
+
+          //play poker
+          currentPlayer = RunPokerGame.runGame(currentPlayer);
+          break;
+
+        case 3:
+
+          //play roulette
+          RouletteGame playRoulette = new RouletteGame(currentPlayer);
+          playRoulette.playRoulette();
+          currentPlayer = playRoulette.getPlayerRoulette();
+          break;
+
+        case 4:
+
+          //play slots
+          SlotsGame playSlots = new SlotsGame(currentPlayer);
+          currentPlayer = playSlots.slots();
+          break;
+
+        case 0:
+
+          //croupier says goodbye
+          System.out.println("");
+          System.out.print(Staff.croupier());
+          System.out.println("Very well. Come back if you change your mind and wish to play a game " + currentPlayer.getName() + "!");
+          break;
+
+        default:
+
+          System.out.println("That was not one of the options."); //tell user they did not enter a valid option
+
+      }
+
+      if (currentPlayer.getBalance() == 0) { //if user has no chips after game
+
+        //tell player where to get more chips
+        System.out.print(Staff.croupier());
+        System.out.println("You are out of chips. You should go talk to the Cashier to buy some more!");
+
+        gameChoice = 0; //kicks user out of game choices
+
+      }
+
+    } while (gameChoice != 0); //loops unless user chooses to leave game table (or runs out of chips)
+
+  }
+
+}
